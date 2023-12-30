@@ -14,21 +14,31 @@ public class SkeletonMachine : MonoBehaviour
 {
     [SerializeField]
     private float speed;
-
     [SerializeField]
     private bool isDead;
-
     [SerializeField]
     private eMonsterType state;
-
     [SerializeField]
     private GameObject target;
 
+    public Vector3 fixPoint;
+    public Vector3 targetPoint;
 
-    // Start is called before the first frame update
+    [SerializeField]
+    private Animator animator;
+
+
+
+    [SerializeField]
+    private float range;
+
     void Start()
     {
+        fixPoint = this.gameObject.transform.position;
+        targetPoint = this.gameObject.transform.position;
         state = eMonsterType.idle;
+        resetTime = Random.Range(2f, 5f);
+
         StartCoroutine(CoAi());   
     }
 
@@ -43,19 +53,8 @@ public class SkeletonMachine : MonoBehaviour
                     Follow();
                     break;
                 case eMonsterType.idle:
-                    int test = -1;
-                    float deltime = 0f;
-                    deltime += Time.deltaTime;
-                    while (3 > deltime)
-                    {
-                        test = Idle(test);
-                        yield return null;
-                    }
-                    
-                    
+                    Idle();
                     break;
-                case eMonsterType.attack:
-                    break;  
             }
 
             yield return null;
@@ -68,45 +67,53 @@ public class SkeletonMachine : MonoBehaviour
         transform.Translate(dis.normalized * Time.deltaTime * speed);
     }
 
-    private int Idle(int old)
+    private float deltime;
+    private float resetTime;
+    private void Idle()
     {
-        int rnd = -1;
-        if(old == -1)
+        
+        if (targetPoint.x + targetPoint.z == transform.position.x + targetPoint.z ||
+            deltime > resetTime)
         {
-             rnd = Random.Range(0, 5);
+            resetTime = Random.Range(2f, 5f);
+
+            deltime = 0f;
+            float rndPointX = Random.Range(fixPoint.x, fixPoint.x + range);
+            float rndPointZ = Random.Range(fixPoint.z, fixPoint.z + range);
+            targetPoint = new Vector3(rndPointX, 4f, rndPointZ);
+
         }
         else
         {
-            rnd = old;
+            deltime += Time.deltaTime;
+            Vector3 direction = (targetPoint - transform.position).normalized;
+            direction = new Vector3(direction.x, 0, direction.z);
+
+            animator.SetFloat("Horizontal", direction.x);
+            animator.SetFloat("Vertical", direction.z);
+
+
+            this.transform.Translate(direction * Time.deltaTime * speed);
         }
+
         
 
-        switch(rnd)
-        {
-            case 0:
-                transform.Translate(Vector3.left * Time.deltaTime * speed);
-                break;
 
-            case 1:
-                transform.Translate(Vector3.right * Time.deltaTime * speed);
-                break;
-
-            case 2:
-                transform.Translate(Vector3.forward * Time.deltaTime * speed);
-                break;
-
-            case 3:
-                transform.Translate(Vector3.back * Time.deltaTime * speed);
-                break;
-            case 4:
-                transform.Translate(Vector3.zero * Time.deltaTime * speed);
-                break;
-
-        }
-
-        return rnd;
     }
-
-
-
 }
+//잘못 만든코드 분석 및 피드백 해야함
+//if(transform.position == targetPoint)
+//{
+//    float rndPointX = Random.Range(fixPoint.x, fixPoint.x + range);
+//    float rndPointZ = Random.Range(fixPoint.z, fixPoint.z + range);
+//    targetPoint = new Vector3(rndPointX, fixPoint.y, rndPointZ);
+
+//}
+//else
+//{
+//    var distance = gameObject.transform.position - targetPoint;
+//    Vector3 newPos = new Vector3(distance.x * Time.deltaTime * speed,
+//                                 this.gameObject.transform.position.y,
+//                                 distance.z * Time.deltaTime * speed);
+//    gameObject.transform.position = newPos;
+//}
